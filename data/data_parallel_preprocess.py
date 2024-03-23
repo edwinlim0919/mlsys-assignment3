@@ -48,42 +48,8 @@ def split_data(
 
     x_train_split = np.array_split(x_train, dp_size, axis=0)
     y_train_split = np.array_split(y_train, dp_size, axis=0)
+    idx = rank // mp_size
 
-    x_train_idx = rank % dp_size
-    y_train_idx = rank % dp_size
-
-    split_x_ret = x_train_split[x_train_idx]
-    split_y_ret = y_train_split[y_train_idx]
-
-    print('SPLIT_DATA DEBUGGING START')
-
-    print('X_TRAIN')
-    print(x_train)
-    print('Y_TRAIN')
-    print(y_train)
-    print('MP_SIZE')
-    print(mp_size)
-    print('DP_SIZE')
-    print(dp_size)
-    print('RANK')
-    print(rank)
-
-    print('X_TRAIN_SPLIT')
-    print(x_train_split)
-    print('Y_TRAIN_SPLIT')
-    print(y_train_split)
-
-    #print('SPLIT_X_RET')
-    #print(split_x_ret)
-    #print('SPLIT_Y_RET')
-    #print(split_y_ret)
-
-    print('SPLIT_DATA DEBUGGING END')
-
-    #split_x_train = x_train_split[x_train_idx]
-    #split_y_train = y_train_split[y_train_idx]
-
-
+    split_x_ret = x_train_split[idx]
+    split_y_ret = y_train_split[idx]
     return split_x_ret, split_y_ret
-    #return x_train_split, y_train_split
-    #return x_train, y_train
