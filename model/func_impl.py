@@ -124,26 +124,40 @@ def naive_collect_forward_input(
     #       functions (np.split and np.concatenate might be helpful).
 
     print(f'x: {x}')
+    print(f'x.size: {x.size}')
+    print(f'x.shape: {x.shape}')
     print(f'mp_comm: {mp_comm}')
     print(f'mp_size: {mp_size}')
 
     recvbuf = np.empty((x.size, mp_size), dtype=np.float64)
-
     mp_comm.barrier()
     mp_comm.Allgather(x, recvbuf)
     mp_comm.barrier()
 
-    print("Allgather: " + str(recvbuf))
-
     result = np.concatenate(recvbuf, axis=0)
-
-    print(f'RESULT: {result}')
-    print(f'result.shape: {result.shape}')
-
     reshaped_result = result.reshape((1, x.size * mp_size))
 
-    return reshaped_result
-    #raise NotImplementedError
+    subarray_size = mp_size * x.shape[0]
+    result_bufs = np.empty((x.size // x.shape[0], mp_size * x.shape[0]), dtype=np.float64)
+
+    for i in range(len(recvbuf)):
+        curr_arr = recvbuf[i]
+        print(f'recvbuf[{i}]: {curr_arr}')
+        curr_arr_split = np.array_split(curr_arr, x.shape[0], axis=0)
+        print(f'curr_arr_split: {curr_arr_split}')
+        start_col = i * x.shape[1]
+        end_col = (i+1) * x.shape[1]
+        for j in range(len(curr_arr_split)):
+            result_bufs[j, start_col:end_col] = curr_arr_split[j]
+
+    print(f'result_bufs: {result_bufs}')
+    print(f'result_bufs.shape: {result_bufs.shape}')
+    print(f'recvbuf: {recvbuf}')
+    print(f'result: {result}')
+    print(f'reshaped_result: {reshaped_result}')
+
+    #return reshaped_result
+    return result_bufs
 
 
 def naive_collect_forward_output(
