@@ -267,20 +267,15 @@ def megatron_collect_forward_output(
     #       the communication functions that you might need
 
 
-    #recvbuf = np.empty((out.size, mp_size), dtype=np.float64)
     recvbuf = np.empty(out.size, dtype=np.float64)
     mp_comm.barrier()
-    #mp_comm.Allgather(out, recvbuf)
     mp_comm.Allreduce(out, recvbuf, op=MPI.SUM)
     mp_comm.barrier()
 
-    print(f'out: {out}')
-    print(f'out.shape: {out.shape}')
-    print(f'recvbuf: {recvbuf}')
-    print(f'mp_comm: {mp_comm}')
-    print(f'mp_size: {mp_size}')
+    if len(out) < 2:
+        return recvbuf.reshape((1, recvbuf.size))
 
-    return recvbuf.reshape((1, recvbuf.size))
+    return recvbuf.reshape((out.shape[0], out.shape[1]))
 
 
 def naive_collect_backward_output(
