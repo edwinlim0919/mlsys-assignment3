@@ -134,17 +134,17 @@ def naive_collect_forward_input(
     mp_comm.Allgather(x, recvbuf)
     mp_comm.barrier()
 
-    result = np.concatenate(recvbuf, axis=0)
-    reshaped_result = result.reshape((1, x.size * mp_size))
+    if len(x) < 2:
+        result = np.concatenate(recvbuf, axis=0)
+        reshaped_result = result.reshape((1, x.size * mp_size))
+        return reshaped_result
 
     subarray_size = mp_size * x.shape[0]
     result_bufs = np.empty((x.size // x.shape[0], mp_size * x.shape[0]), dtype=np.float64)
 
     for i in range(len(recvbuf)):
         curr_arr = recvbuf[i]
-        print(f'recvbuf[{i}]: {curr_arr}')
         curr_arr_split = np.array_split(curr_arr, x.shape[0], axis=0)
-        print(f'curr_arr_split: {curr_arr_split}')
         start_col = i * x.shape[1]
         end_col = (i+1) * x.shape[1]
         for j in range(len(curr_arr_split)):
@@ -153,10 +153,6 @@ def naive_collect_forward_input(
     print(f'result_bufs: {result_bufs}')
     print(f'result_bufs.shape: {result_bufs.shape}')
     print(f'recvbuf: {recvbuf}')
-    print(f'result: {result}')
-    print(f'reshaped_result: {reshaped_result}')
-
-    #return reshaped_result
     return result_bufs
 
 
