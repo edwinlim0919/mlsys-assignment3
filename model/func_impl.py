@@ -230,9 +230,6 @@ def megatron_collect_forward_input(
     """TODO: Your code here"""
 
     # Hint: you don't need all the input parameters to get the collected_x
-    print(f'x: {x}')
-    print(f'mp_comm: {mp_comm}')
-    print(f'mp_size: {mp_size}')
 
     if len(x) < 2:
         return x.reshape((1, x.size))
@@ -269,7 +266,21 @@ def megatron_collect_forward_output(
     # Hint: try to work through a toy forward example for megatron-style model parallel to figure out the
     #       the communication functions that you might need
 
-    raise NotImplementedError
+
+    #recvbuf = np.empty((out.size, mp_size), dtype=np.float64)
+    recvbuf = np.empty(out.size, dtype=np.float64)
+    mp_comm.barrier()
+    #mp_comm.Allgather(out, recvbuf)
+    mp_comm.Allreduce(out, recvbuf, op=MPI.SUM)
+    mp_comm.barrier()
+
+    print(f'out: {out}')
+    print(f'out.shape: {out.shape}')
+    print(f'recvbuf: {recvbuf}')
+    print(f'mp_comm: {mp_comm}')
+    print(f'mp_size: {mp_size}')
+
+    return recvbuf.reshape((1, recvbuf.size))
 
 
 def naive_collect_backward_output(
