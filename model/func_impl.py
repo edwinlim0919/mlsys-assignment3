@@ -234,21 +234,9 @@ def megatron_collect_forward_input(
     print(f'mp_comm: {mp_comm}')
     print(f'mp_size: {mp_size}')
 
-    recvbuf = np.empty((x.size, mp_size), dtype=np.float64)
-    mp_comm.barrier()
-    mp_comm.Allgather(x, recvbuf)
-    mp_comm.barrier()
-
-    print(f'recvbuf: {recvbuf}')
-    print(f'recvbuf.shape: {recvbuf.shape}')
-    return x.reshape((1, x.size))
-    #return recvbuf
-
-    #if len(x) < 2:
-    #    result = np.concatenate(recvbuf, axis=0)
-    #    reshaped_result = result.reshape((1, x.size * mp_size))
-    #    return reshaped_result
-    #raise NotImplementedError
+    if len(x) < 2:
+        return x.reshape((1, x.size))
+    return x
 
 
 def megatron_collect_forward_output(
