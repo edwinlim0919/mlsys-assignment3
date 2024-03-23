@@ -199,8 +199,6 @@ def naive_collect_forward_output(
 
     return result_bufs
 
-    #raise NotImplementedError
-
 
 def megatron_collect_forward_input(
     x: np.ndarray,
@@ -307,7 +305,17 @@ def naive_collect_backward_output(
 
     # Hint: you might want to use np.split to get the collected_output_grad for each MP node
 
-    raise NotImplementedError
+    print(f'output_grad: {output_grad}')
+    print(f'output_grad.shape: {output_grad.shape}')
+    print(f'mp_group_idx: {mp_group_idx}')
+    print(f'mp_size: {mp_size}')
+
+    output_grad_split = np.array_split(output_grad[0], mp_size, axis=0)
+    print(f'output_grad_split: {output_grad_split}')
+
+    group_arr = output_grad_split[mp_group_idx]
+    return group_arr.reshape(1, len(group_arr))
+    #return output_grad
 
 
 def naive_collect_backward_x(
