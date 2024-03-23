@@ -71,9 +71,6 @@ def get_info(
     # the model/data parallel communication group is required to apply mpi operations within the scope of the group
     # Hint: try to figure out the relationship between the mp_idx, dp_idx with the mp/dp communication group
     #       and use the comm.Split() function to get the corresponding group.
-    #mp_comm = comm.Split(mp_idx, dp_idx)
-    #dp_comm = comm.Split(dp_idx, mp_idx)
-    #mp_comm = comm.Split()
     dp_comm = comm.Split(mp_idx, rank)
     mp_comm = comm.Split(dp_idx, rank)
 
@@ -89,7 +86,6 @@ def get_info(
         part_in_dim = in_dim
         part_out_dim = out_dim // mp_size
 
-    #raise NotImplementedError
     return mp_idx, dp_idx, mp_comm, dp_comm, part_in_dim, part_out_dim
 
 
@@ -127,7 +123,27 @@ def naive_collect_forward_input(
     #       might not align with your expected layout. In order to get the correct layout, you may wish to use some NumPy
     #       functions (np.split and np.concatenate might be helpful).
 
-    raise NotImplementedError
+    print(f'x: {x}')
+    print(f'mp_comm: {mp_comm}')
+    print(f'mp_size: {mp_size}')
+
+    recvbuf = np.empty((x.size, mp_size), dtype=np.float64)
+
+    mp_comm.barrier()
+    mp_comm.Allgather(x, recvbuf)
+    mp_comm.barrier()
+
+    print("Allgather: " + str(recvbuf))
+
+    result = np.concatenate(recvbuf, axis=0)
+
+    print(f'RESULT: {result}')
+    print(f'result.shape: {result.shape}')
+
+    reshaped_result = result.reshape((1, x.size * mp_size))
+
+    return reshaped_result
+    #raise NotImplementedError
 
 
 def naive_collect_forward_output(
