@@ -125,9 +125,9 @@ def naive_collect_forward_input(
 
 
     recvbuf = np.empty((x.size, mp_size), dtype=np.float64)
-    mp_comm.barrier()
+    mp_comm.Barrier()
     mp_comm.Allgather(x, recvbuf)
-    mp_comm.barrier()
+    mp_comm.Barrier()
 
     if len(x) < 2:
         result = np.concatenate(recvbuf, axis=0)
@@ -177,9 +177,9 @@ def naive_collect_forward_output(
 
     # Hint: you might have just implemented something similar ^-^
     recvbuf = np.empty((out.size, mp_size), dtype=np.float64)
-    mp_comm.barrier()
+    mp_comm.Barrier()
     mp_comm.Allgather(out, recvbuf)
-    mp_comm.barrier()
+    mp_comm.Barrier()
 
     if len(out) < 2:
         result = np.concatenate(recvbuf, axis=0)
@@ -266,9 +266,9 @@ def megatron_collect_forward_output(
 
 
     recvbuf = np.empty(out.size, dtype=np.float64)
-    mp_comm.barrier()
+    mp_comm.Barrier()
     mp_comm.Allreduce(out, recvbuf, op=MPI.SUM)
-    mp_comm.barrier()
+    mp_comm.Barrier()
 
     if len(out) < 2:
         return recvbuf.reshape((1, recvbuf.size))
@@ -353,9 +353,9 @@ def naive_collect_backward_x(
 
     recvbuf = np.empty((grad_x.shape[0], grad_x.shape[1] // mp_size), dtype=np.float64)
     for i in range(grad_x.shape[0]):
-        mp_comm.barrier()
+        mp_comm.Barrier()
         mp_comm.Reduce_scatter(grad_x[i], recvbuf[i], op=MPI.SUM)
-        mp_comm.barrier()
+        mp_comm.Barrier()
 
     return recvbuf
 
@@ -463,13 +463,13 @@ def collect_weight_grad(
     recvbuf_w = np.empty((grad_w.shape[0], grad_w.shape[1]), dtype=np.float64)
     recvbuf_b = np.empty((grad_b.shape[0], grad_b.shape[1]), dtype=np.float64)
     for i in range(grad_w.shape[0]):
-        dp_comm.barrier()
+        dp_comm.Barrier()
         dp_comm.Allreduce(grad_w[i], recvbuf_w[i], op=MPI.SUM)
-        dp_comm.barrier()
+        dp_comm.Barrier()
 
     for i in range(grad_b.shape[0]):
-        dp_comm.barrier()
+        dp_comm.Barrier()
         dp_comm.Allreduce(grad_b[i], recvbuf_b[i], op=MPI.SUM)
-        dp_comm.barrier()
+        dp_comm.Barrier()
 
     return recvbuf_w, recvbuf_b
