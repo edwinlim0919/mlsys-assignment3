@@ -458,4 +458,18 @@ def collect_weight_grad(
 
     # Hint: Think about how you might want to aggregate the gradients from different nodes in data parallel training
 
-    raise NotImplementedError
+    #raise NotImplementedError
+
+    recvbuf_w = np.empty((grad_w.shape[0], grad_w.shape[1]), dtype=np.float64)
+    recvbuf_b = np.empty((grad_b.shape[0], grad_b.shape[1]), dtype=np.float64)
+    for i in range(grad_w.shape[0]):
+        dp_comm.barrier()
+        dp_comm.Allreduce(grad_w[i], recvbuf_w[i], op=MPI.SUM)
+        dp_comm.barrier()
+
+    for i in range(grad_b.shape[0]):
+        dp_comm.barrier()
+        dp_comm.Allreduce(grad_b[i], recvbuf_b[i], op=MPI.SUM)
+        dp_comm.barrier()
+
+    return recvbuf_w, recvbuf_b
