@@ -305,41 +305,18 @@ def naive_collect_backward_output(
 
     # Hint: you might want to use np.split to get the collected_output_grad for each MP node
 
-    print(f'output_grad: {output_grad}')
-    print(f'output_grad.shape: {output_grad.shape}')
-    print(f'mp_group_idx: {mp_group_idx}')
-    print(f'mp_size: {mp_size}')
-
     if len(output_grad) < 2:
         output_grad_split = np.array_split(output_grad[0], mp_size, axis=0)
         group_arr = output_grad_split[mp_group_idx]
         return group_arr.reshape(1, len(group_arr))
 
     recvbuf = np.empty((output_grad.shape[0], output_grad.shape[1] // mp_size), dtype=np.float64)
-
     for i in range(len(output_grad)):
-        print(f'output_grad[{i}]: {output_grad[i]}')
         start_col = mp_group_idx * (output_grad.shape[1] // mp_size)
         end_col = (mp_group_idx+1) * (output_grad.shape[1] // mp_size)
         recvbuf[i] = output_grad[i, start_col:end_col]
 
-    print(f'recvbuf: {recvbuf}')
-    print(f'recvbuf.shape: {recvbuf.shape}')
     return recvbuf
-
-    #for i in range(len(recvbuf)):
-    #    curr_arr = recvbuf[i]
-    #    curr_arr_split = np.array_split(curr_arr, out.shape[0], axis=0)
-    #    start_col = i * out.shape[1]
-    #    end_col = (i+1) * out.shape[1]
-    #    for j in range(len(curr_arr_split)):
-    #        result_bufs[j, start_col:end_col] = curr_arr_split[j]
-
-    #group_arr = output_grad[mp_group_idx]
-    #print(f'group_arr: {group_arr}')
-
-    #return group_arr.reshape(1, len(group_arr))
-    #return output_grad
 
 
 def naive_collect_backward_x(
@@ -374,7 +351,13 @@ def naive_collect_backward_x(
 
     # Hint 2: You might want to use reduce_scatter
 
-    raise NotImplementedError
+    recvbuf = np.empty((grad_x.shape[0], grad_x.shape[1] // mp_size), dtype=np.float64)
+    for i in range(grad_x.shape[0]):
+        mp_comm.barrier()
+        mp_comm.Reduce_scatter(grad_x[i], recvbuf[i], op=MPI.SUM)
+        mp_comm.barrier()
+
+    return recvbuf
 
 
 def megatron_collect_backward_output(
